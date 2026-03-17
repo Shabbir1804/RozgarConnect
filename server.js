@@ -12,13 +12,1479 @@ const { v4: uid } = require('uuid');
 const path     = require('path');
 
 const app    = express();
+
+const HTML = `<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RozgarConnect – नौकरी खोजें</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --saffron: #FF6B00;
+  --saffron-light: #FF8C33;
+  --saffron-pale: #FFF3E8;
+  --green: #00A550;
+  --green-light: #00C060;
+  --green-pale: #E6F7EE;
+  --blue: #1A73E8;
+  --navy: #0D1B3E;
+  --navy-light: #1A2D5A;
+  --gold: #F5A623;
+  --text: #1A1A2E;
+  --text-mid: #4A4A6A;
+  --text-light: #8888AA;
+  --bg: #F5F5FA;
+  --white: #FFFFFF;
+  --card: #FFFFFF;
+  --border: #E0E0F0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-main: 'Baloo 2', 'Noto Sans Devanagari', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* SPLASH SCREEN */
+#splash {
+  position: fixed; inset: 0; z-index: 1000;
+  background: linear-gradient(160deg, #0D1B3E 0%, #1A3A6E 60%, #0D1B3E 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; transition: opacity 0.5s ease;
+}
+#splash .logo-ring {
+  width: 90px; height: 90px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--saffron), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; box-shadow: 0 0 40px rgba(255,107,0,0.5);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+#splash h1 { color: white; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+#splash p { color: rgba(255,255,255,0.6); font-size: 14px; }
+#splash .tagline { color: var(--saffron-light); font-size: 16px; font-weight: 600; }
+.loader-bar {
+  width: 200px; height: 4px; background: rgba(255,255,255,0.2);
+  border-radius: 2px; margin-top: 24px; overflow: hidden;
+}
+.loader-fill { height: 100%; background: var(--saffron); border-radius: 2px; animation: load 2s ease forwards; }
+@keyframes load { from{width:0} to{width:100%} }
+
+/* ONBOARDING */
+#onboarding {
+  display: none; position: fixed; inset: 0; z-index: 900;
+  background: white; flex-direction: column;
+}
+.onboard-slide { display: none; flex-direction: column; height: 100%; }
+.onboard-slide.active { display: flex; }
+.onboard-hero {
+  background: linear-gradient(160deg, var(--navy) 0%, var(--navy-light) 100%);
+  height: 45vh; display: flex; align-items: center; justify-content: center;
+  font-size: 80px; position: relative; overflow: hidden;
+}
+.onboard-hero::after {
+  content: ''; position: absolute; bottom: -20px; left: 0; right: 0;
+  height: 40px; background: white; border-radius: 30px 30px 0 0;
+}
+.onboard-body { padding: 32px 24px 24px; flex: 1; display: flex; flex-direction: column; }
+.onboard-body h2 { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
+.onboard-body p { color: var(--text-mid); font-size: 15px; line-height: 1.6; flex: 1; }
+.onboard-dots { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
+.onboard-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--border); transition: all 0.3s; }
+.onboard-dot.active { width: 24px; background: var(--saffron); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--saffron), var(--saffron-light));
+  color: white; border: none; border-radius: 14px; padding: 16px 24px;
+  font-family: var(--font-main); font-size: 17px; font-weight: 700;
+  width: 100%; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 16px rgba(255,107,0,0.35);
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-secondary {
+  background: transparent; color: var(--text-mid); border: 2px solid var(--border);
+  border-radius: 14px; padding: 14px 24px; font-family: var(--font-main);
+  font-size: 16px; font-weight: 600; width: 100%; cursor: pointer; margin-top: 10px;
+}
+
+/* ROLE SELECT */
+#role-select {
+  display: none; position: fixed; inset: 0; z-index: 880;
+  background: white; flex-direction: column; padding: 48px 24px 32px;
+  gap: 20px; align-items: center;
+}
+#role-select h2 { font-size: 24px; font-weight: 800; text-align: center; }
+#role-select p { color: var(--text-mid); font-size: 15px; text-align: center; }
+.role-card {
+  width: 100%; padding: 24px; border-radius: 20px; border: 3px solid var(--border);
+  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px;
+  background: white;
+}
+.role-card:active, .role-card.selected { border-color: var(--saffron); background: var(--saffron-pale); }
+.role-icon { font-size: 44px; width: 64px; text-align: center; }
+.role-info h3 { font-size: 20px; font-weight: 700; }
+.role-info p { font-size: 13px; color: var(--text-mid); margin-top: 4px; }
+
+/* MAIN APP */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+
+/* TOP BAR */
+.topbar {
+  background: var(--navy);
+  padding: 16px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-logo { display: flex; align-items: center; gap: 8px; color: white; }
+.topbar-logo .logo-dot { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--saffron), var(--gold)); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.topbar-logo span { font-size: 18px; font-weight: 800; }
+.topbar-actions { display: flex; gap: 12px; align-items: center; }
+.icon-btn { background: rgba(255,255,255,0.12); border: none; border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; font-size: 18px; position: relative; }
+.notif-badge { position: absolute; top: -4px; right: -4px; background: var(--saffron); color: white; font-size: 10px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+/* CONTENT AREA */
+.content { flex: 1; padding-bottom: 80px; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px; background: white;
+  border-top: 1px solid var(--border); display: flex;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; cursor: pointer; padding: 6px 4px; color: var(--text-light);
+  font-size: 11px; font-weight: 600; transition: color 0.2s; border: none; background: none; font-family: var(--font-main);
+}
+.nav-item .nav-icon { font-size: 22px; line-height: 1; }
+.nav-item.active { color: var(--saffron); }
+.nav-item.active .nav-icon { transform: scale(1.1); }
+
+/* SCREENS */
+.screen { display: none; animation: fadeIn 0.25s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* SECTION HEADER */
+.section-pad { padding: 20px 20px 0; }
+.section-title { font-size: 22px; font-weight: 800; color: var(--text); }
+.section-sub { font-size: 13px; color: var(--text-light); margin-top: 2px; }
+
+/* CARDS */
+.card {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin: 16px 20px 0;
+  overflow: hidden;
+}
+.card-pad { padding: 16px; }
+
+/* HOME SCREEN - WORKER */
+.greeting-banner {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  padding: 20px 20px 28px; position: relative; overflow: hidden;
+}
+.greeting-banner::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 24px; background: var(--bg); border-radius: 24px 24px 0 0;
+}
+.greeting-banner .greet-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.greeting-banner h2 { color: white; font-size: 22px; font-weight: 700; }
+.greeting-banner p { color: rgba(255,255,255,0.65); font-size: 13px; margin-top: 4px; }
+.availability-toggle {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 14px;
+  margin-top: 12px; cursor: pointer;
+}
+.toggle-pill {
+  width: 44px; height: 24px; border-radius: 12px; background: rgba(255,255,255,0.3);
+  position: relative; transition: background 0.3s;
+}
+.toggle-pill.on { background: var(--green); }
+.toggle-pill::after {
+  content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+  background: white; top: 3px; left: 3px; transition: transform 0.3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-pill.on::after { transform: translateX(20px); }
+.toggle-label { color: white; font-size: 14px; font-weight: 600; }
+
+/* STATS ROW */
+.stats-row { display: flex; gap: 12px; padding: 16px 20px 0; }
+.stat-card {
+  flex: 1; background: white; border-radius: 14px; padding: 14px 12px;
+  box-shadow: var(--shadow); text-align: center;
+}
+.stat-card .stat-num { font-size: 26px; font-weight: 800; color: var(--saffron); }
+.stat-card .stat-lbl { font-size: 11px; color: var(--text-light); margin-top: 2px; font-weight: 600; }
+
+/* JOB MATCH CARD */
+.job-match-card {
+  background: white; border-radius: var(--radius); margin: 12px 20px 0;
+  box-shadow: var(--shadow); overflow: hidden; cursor: pointer;
+  transition: transform 0.15s;
+}
+.job-match-card:active { transform: scale(0.98); }
+.job-match-top {
+  display: flex; align-items: flex-start; gap: 14px; padding: 16px 16px 12px;
+}
+.employer-avatar {
+  width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  font-weight: 800; color: white;
+}
+.job-info { flex: 1; min-width: 0; }
+.job-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+.employer-name { font-size: 12px; color: var(--text-light); }
+.job-salary { font-size: 15px; font-weight: 700; color: var(--green); }
+.job-tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px; }
+.tag {
+  background: var(--saffron-pale); color: var(--saffron); font-size: 11px;
+  font-weight: 600; padding: 4px 10px; border-radius: 20px;
+}
+.tag.green { background: var(--green-pale); color: var(--green); }
+.tag.blue { background: #EAF1FD; color: var(--blue); }
+.job-footer {
+  border-top: 1px solid var(--border); padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.job-footer-left { font-size: 12px; color: var(--text-light); }
+.btn-sm {
+  background: var(--saffron); color: white; border: none; border-radius: 10px;
+  padding: 8px 16px; font-family: var(--font-main); font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.btn-sm.outline { background: transparent; color: var(--saffron); border: 2px solid var(--saffron); }
+.btn-sm.green { background: var(--green); }
+
+/* WORKER CARD (for employer view) */
+.worker-card {
+  background: white; border-radius: var(--radius); margin: 12px 20px 0;
+  box-shadow: var(--shadow); overflow: hidden; cursor: pointer;
+}
+.worker-card-top { display: flex; gap: 14px; padding: 16px; align-items: flex-start; }
+.worker-avatar {
+  width: 58px; height: 58px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  color: white; font-weight: 800; position: relative;
+}
+.verified-badge {
+  position: absolute; bottom: 0; right: 0; width: 18px; height: 18px;
+  background: var(--blue); border-radius: 50%; border: 2px solid white;
+  display: flex; align-items: center; justify-content: center; font-size: 9px; color: white;
+}
+.worker-main { flex: 1; }
+.worker-name { font-size: 17px; font-weight: 700; }
+.worker-skill { font-size: 13px; color: var(--saffron); font-weight: 600; margin-top: 2px; }
+.stars { color: var(--gold); font-size: 13px; margin-top: 4px; }
+.worker-salary { font-size: 15px; font-weight: 700; color: var(--green); margin-top: 4px; }
+.worker-actions { display: flex; gap: 10px; padding: 0 16px 16px; }
+.btn-like {
+  flex: 1; background: linear-gradient(135deg, var(--saffron), var(--saffron-light));
+  color: white; border: none; border-radius: 12px; padding: 12px;
+  font-family: var(--font-main); font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-skip {
+  width: 48px; background: var(--bg); border: 2px solid var(--border);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; cursor: pointer;
+}
+
+/* MATCHES SCREEN */
+.match-item {
+  background: white; border-radius: 14px; margin: 10px 20px 0;
+  box-shadow: var(--shadow); padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+  transition: transform 0.15s;
+}
+.match-item:active { transform: scale(0.98); }
+.match-avatar {
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+  color: white; font-weight: 700;
+}
+.match-info { flex: 1; }
+.match-name { font-size: 15px; font-weight: 700; }
+.match-meta { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+.match-time { font-size: 11px; color: var(--text-light); }
+.match-status {
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+}
+.match-status.pending { background: #FFF3E8; color: var(--saffron); }
+.match-status.matched { background: var(--green-pale); color: var(--green); }
+.match-status.new { background: #EAF1FD; color: var(--blue); }
+
+.unlock-banner {
+  background: linear-gradient(135deg, #FF6B00, #FF8C33);
+  border-radius: var(--radius); margin: 16px 20px 0; padding: 16px;
+  color: white; display: flex; align-items: center; gap: 14px;
+}
+.unlock-banner .lock-icon { font-size: 32px; }
+.unlock-banner h3 { font-size: 15px; font-weight: 700; }
+.unlock-banner p { font-size: 12px; opacity: 0.85; margin-top: 3px; }
+
+/* NOTIFICATIONS */
+.notif-item {
+  background: white; margin: 8px 20px 0; border-radius: 14px;
+  padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start;
+  box-shadow: var(--shadow); cursor: pointer;
+}
+.notif-item.unread { border-left: 3px solid var(--saffron); }
+.notif-dot { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.notif-content { flex: 1; }
+.notif-text { font-size: 14px; color: var(--text); line-height: 1.4; }
+.notif-text b { color: var(--saffron); }
+.notif-time { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+/* PROFILE SCREEN */
+.profile-hero {
+  background: linear-gradient(160deg, var(--navy), var(--navy-light));
+  padding: 28px 20px 40px; position: relative;
+}
+.profile-hero::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 24px; background: var(--bg); border-radius: 24px 24px 0 0;
+}
+.profile-avatar-wrap { display: flex; align-items: flex-end; gap: 16px; }
+.profile-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 3px solid var(--saffron); display: flex; align-items: center;
+  justify-content: center; font-size: 34px; color: white;
+  background: linear-gradient(135deg, #2A4080, #1A3060);
+}
+.profile-info { flex: 1; }
+.profile-name { color: white; font-size: 22px; font-weight: 800; }
+.profile-skill { color: var(--saffron-light); font-size: 14px; font-weight: 600; margin-top: 2px; }
+.profile-rating { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.rating-num { color: white; font-size: 15px; font-weight: 700; }
+
+.profile-stats { display: flex; background: white; border-radius: var(--radius); margin: 12px 20px 0; box-shadow: var(--shadow); }
+.profile-stat { flex: 1; padding: 14px 8px; text-align: center; }
+.profile-stat:not(:last-child) { border-right: 1px solid var(--border); }
+.profile-stat .pstat-num { font-size: 20px; font-weight: 800; color: var(--saffron); }
+.profile-stat .pstat-lbl { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+.info-section { margin: 16px 20px 0; }
+.info-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.info-row {
+  background: white; border-radius: 12px; padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.info-row-left { display: flex; align-items: center; gap: 12px; }
+.info-row-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.info-label { font-size: 13px; color: var(--text-light); }
+.info-value { font-size: 15px; font-weight: 600; }
+.info-row-right { font-size: 18px; color: var(--text-light); }
+
+/* EMPLOYER POST JOB */
+.form-section { padding: 16px 20px 0; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 14px; font-weight: 600; color: var(--text-mid); margin-bottom: 8px; display: block; }
+.form-input {
+  width: 100%; padding: 14px 16px; border: 2px solid var(--border);
+  border-radius: 12px; font-family: var(--font-main); font-size: 15px; color: var(--text);
+  background: white; transition: border-color 0.2s; outline: none;
+}
+.form-input:focus { border-color: var(--saffron); }
+.category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cat-btn {
+  background: white; border: 2px solid var(--border); border-radius: 12px;
+  padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s;
+  font-family: var(--font-main);
+}
+.cat-btn.selected { border-color: var(--saffron); background: var(--saffron-pale); }
+.cat-btn .cat-icon { font-size: 24px; margin-bottom: 4px; }
+.cat-btn .cat-name { font-size: 11px; font-weight: 600; color: var(--text-mid); }
+
+/* FILTER PANEL */
+.filter-bar {
+  display: flex; gap: 8px; padding: 12px 20px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-chip {
+  background: white; border: 2px solid var(--border); border-radius: 20px;
+  padding: 7px 14px; font-family: var(--font-main); font-size: 13px; font-weight: 600;
+  color: var(--text-mid); cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  display: flex; align-items: center; gap: 5px;
+}
+.filter-chip.active { background: var(--saffron-pale); border-color: var(--saffron); color: var(--saffron); }
+
+/* MATCH ANIMATION */
+.match-popup {
+  position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.8);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 32px;
+}
+.match-popup.show { display: flex; animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popIn { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+.match-popup-inner { background: white; border-radius: 28px; padding: 32px; text-align: center; width: 100%; }
+.match-emojis { font-size: 48px; margin-bottom: 16px; }
+.match-popup h2 { font-size: 28px; font-weight: 800; color: var(--text); }
+.match-popup p { color: var(--text-mid); margin-top: 8px; font-size: 15px; }
+.confetti { position: absolute; top: 0; left: 0; right: 0; height: 200px; overflow: hidden; }
+
+/* BOTTOM SHEET */
+.bottom-sheet-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 400;
+  display: none; align-items: flex-end;
+}
+.bottom-sheet-overlay.show { display: flex; }
+.bottom-sheet {
+  background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 430px;
+  margin: 0 auto; padding: 12px 24px 32px; animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.sheet-title { font-size: 20px; font-weight: 800; margin-bottom: 16px; }
+
+/* PAY MODAL */
+.pay-option {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 14px;
+  padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pay-option.selected { border-color: var(--saffron); background: var(--saffron-pale); }
+.pay-option h4 { font-size: 16px; font-weight: 700; }
+.pay-option p { font-size: 13px; color: var(--text-mid); margin-top: 2px; }
+.pay-price { font-size: 20px; font-weight: 800; color: var(--saffron); }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 48px 32px; }
+.empty-state .empty-icon { font-size: 56px; margin-bottom: 16px; }
+.empty-state h3 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.empty-state p { color: var(--text-light); font-size: 14px; line-height: 1.6; }
+
+/* EMPLOYER DASHBOARD */
+.employer-hero {
+  background: linear-gradient(135deg, #0D1B3E 0%, #1A3A6E 100%);
+  padding: 20px 20px 32px; position: relative; overflow: hidden;
+}
+.employer-hero::before {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(255,107,0,0.15); border: 2px solid rgba(255,107,0,0.3);
+}
+.employer-hero::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 24px; background: var(--bg); border-radius: 24px 24px 0 0;
+}
+.employer-hero h2 { color: white; font-size: 20px; font-weight: 800; }
+.employer-hero p { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 4px; }
+.emp-stat-row { display: flex; gap: 10px; margin-top: 16px; position: relative; z-index: 1; }
+.emp-stat { background: rgba(255,255,255,0.12); border-radius: 12px; padding: 12px; flex: 1; text-align: center; }
+.emp-stat .n { color: white; font-size: 22px; font-weight: 800; }
+.emp-stat .l { color: rgba(255,255,255,0.6); font-size: 11px; }
+
+.top-workers-label {
+  padding: 20px 20px 0; font-size: 18px; font-weight: 700;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.view-all { font-size: 13px; color: var(--saffron); font-weight: 600; cursor: pointer; }
+
+/* SCROLL FADE */
+.scroll-hint { text-align: center; padding: 16px; color: var(--text-light); font-size: 12px; }
+
+/* CHIP GROUP */
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 20px;
+  padding: 8px 16px; font-family: var(--font-main); font-size: 13px; font-weight: 600;
+  color: var(--text-mid); cursor: pointer; transition: all 0.2s;
+}
+.chip.active { background: var(--saffron-pale); border-color: var(--saffron); color: var(--saffron); }
+
+/* RATING STARS INPUT */
+.star-input { display: flex; gap: 8px; }
+.star-btn { font-size: 28px; cursor: pointer; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
+.star-btn.on { opacity: 1; }
+.star-btn:active { transform: scale(1.2); }
+
+/* BOOST CARD */
+.boost-card {
+  background: linear-gradient(135deg, var(--navy), #2A4080);
+  border-radius: var(--radius); margin: 12px 20px 0; padding: 18px;
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+}
+.boost-icon { font-size: 36px; }
+.boost-info { flex: 1; }
+.boost-info h3 { color: white; font-size: 16px; font-weight: 700; }
+.boost-info p { color: rgba(255,255,255,0.65); font-size: 12px; margin-top: 3px; }
+.boost-price { color: var(--gold); font-size: 16px; font-weight: 800; }
+
+/* CONTACT CARD */
+.contact-card {
+  background: var(--green-pale); border: 2px solid var(--green); border-radius: 16px;
+  padding: 16px; margin: 12px 20px 0; display: flex; align-items: center; gap: 14px;
+}
+.contact-card .cc-info h4 { font-size: 15px; font-weight: 700; color: var(--green); }
+.contact-card .cc-info p { font-size: 13px; color: var(--text-mid); margin-top: 2px; }
+.contact-card .cc-btn { background: var(--green); color: white; border: none; border-radius: 10px; padding: 10px 16px; font-family: var(--font-main); font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+/* RESPONSIVE TWEAKS */
+@media (max-width: 360px) {
+  .category-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="logo-ring">🔧</div>
+  <h1>RozgarConnect</h1>
+  <div class="tagline">काम ढूंढो, आगे बढ़ो</div>
+  <p>Tier 2 & Tier 3 India का अपना जॉब प्लेटफॉर्म</p>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboarding" style="display:flex">
+  <!-- Slide 1 -->
+  <div class="onboard-slide active" id="slide-1">
+    <div class="onboard-hero">🤝</div>
+    <div class="onboard-body">
+      <h2>सही काम, सही मजदूरी</h2>
+      <p>RozgarConnect पर लाखों नौकरियां आपके शहर में। बिना दलाल, बिना झंझट – सीधा नियोक्ता से मिलें।</p>
+      <div class="onboard-dots">
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot"></div>
+        <div class="onboard-dot"></div>
+      </div>
+      <button class="btn-primary" onclick="nextSlide(2)">आगे बढ़ें →</button>
+    </div>
+  </div>
+  <!-- Slide 2 -->
+  <div class="onboard-slide" id="slide-2">
+    <div class="onboard-hero">⭐</div>
+    <div class="onboard-body">
+      <h2>भरोसेमंद प्लेटफॉर्म</h2>
+      <p>सभी नियोक्ता और कामगार वेरिफाइड हैं। रेटिंग और रिव्यू से पता चलता है कौन भरोसेमंद है।</p>
+      <div class="onboard-dots">
+        <div class="onboard-dot"></div>
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot"></div>
+      </div>
+      <button class="btn-primary" onclick="nextSlide(3)">आगे बढ़ें →</button>
+      <button class="btn-secondary" onclick="nextSlide(1)">← वापस</button>
+    </div>
+  </div>
+  <!-- Slide 3 -->
+  <div class="onboard-slide" id="slide-3">
+    <div class="onboard-hero">💰</div>
+    <div class="onboard-body">
+      <h2>आपकी मनचाही तनख्वाह</h2>
+      <p>आप अपनी सैलरी खुद तय करें। मैचिंग सिस्टम आपको सबसे अच्छे ऑफर दिखाता है।</p>
+      <div class="onboard-dots">
+        <div class="onboard-dot"></div>
+        <div class="onboard-dot"></div>
+        <div class="onboard-dot active"></div>
+      </div>
+      <button class="btn-primary" onclick="showRoleSelect()">शुरू करें 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROLE SELECT -->
+<div id="role-select">
+  <h2>आप कौन हैं?</h2>
+  <p>सही अनुभव के लिए बताएं</p>
+  <div class="role-card" onclick="selectRole('worker')">
+    <div class="role-icon">👷</div>
+    <div class="role-info">
+      <h3>कामगार / मजदूर</h3>
+      <p>नौकरी ढूंढ रहे हैं – सेल्सबॉय, लेबर, हेल्पर, आदि</p>
+    </div>
+  </div>
+  <div class="role-card" onclick="selectRole('employer')">
+    <div class="role-icon">🏪</div>
+    <div class="role-info">
+      <h3>नियोक्ता / मालिक</h3>
+      <p>कर्मचारी ढूंढ रहे हैं – दुकान, फैक्ट्री, कंस्ट्रक्शन</p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-dot">🔧</div>
+      <span>RozgarConnect</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="icon-btn" onclick="showScreen('notifications')">
+        🔔
+        <div class="notif-badge" id="notif-count">3</div>
+      </div>
+      <div class="icon-btn" onclick="showScreen('profile')">👤</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- HOME - WORKER -->
+    <div class="screen active" id="screen-home-worker">
+      <div class="greeting-banner">
+        <div class="greet-top">
+          <div>
+            <h2>नमस्ते, राजेश! 👋</h2>
+            <p>लखनऊ, उत्तर प्रदेश</p>
+          </div>
+          <div style="background:rgba(255,255,255,0.15);padding:8px 12px;border-radius:10px;text-align:center">
+            <div style="color:var(--gold);font-size:13px;font-weight:700">⭐ 4.7</div>
+            <div style="color:rgba(255,255,255,0.6);font-size:10px">रेटिंग</div>
+          </div>
+        </div>
+        <div class="availability-toggle" onclick="toggleAvailability()">
+          <div class="toggle-pill on" id="avail-toggle"></div>
+          <span class="toggle-label" id="avail-label">✅ उपलब्ध हूं – नौकरी मिल सकती है</span>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num">7</div>
+          <div class="stat-lbl">नए ऑफर</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">3</div>
+          <div class="stat-lbl">मैच</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">42</div>
+          <div class="stat-lbl">व्यू</div>
+        </div>
+      </div>
+
+      <div style="padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between">
+        <div class="section-title" style="font-size:18px">आपके लिए नौकरियां</div>
+        <div style="font-size:12px;color:var(--saffron);font-weight:600">सभी देखें</div>
+      </div>
+
+      <div class="job-match-card" onclick="showJobDetail()">
+        <div class="job-match-top">
+          <div class="employer-avatar" style="background:linear-gradient(135deg,#FF6B00,#FF8C33)">🏪</div>
+          <div class="job-info">
+            <div class="job-title">सेल्सबॉय – मोबाइल शॉप</div>
+            <div class="employer-name">राम इलेक्ट्रॉनिक्स • ⭐ 4.5</div>
+            <div class="job-salary">₹12,000/महीना</div>
+          </div>
+        </div>
+        <div class="job-tags">
+          <span class="tag">📍 2.3 km</span>
+          <span class="tag green">✅ वेरिफाइड</span>
+          <span class="tag blue">🕐 तुरंत जॉइनिंग</span>
+        </div>
+        <div class="job-footer">
+          <div class="job-footer-left">👁 आपका प्रोफाइल देखा</div>
+          <button class="btn-sm" onclick="event.stopPropagation();showAcceptSheet()">रुचि दिखाएं ❤️</button>
+        </div>
+      </div>
+
+      <div class="job-match-card">
+        <div class="job-match-top">
+          <div class="employer-avatar" style="background:linear-gradient(135deg,#1A73E8,#4AA3F5)">🏗</div>
+          <div class="job-info">
+            <div class="job-title">कंस्ट्रक्शन हेल्पर</div>
+            <div class="employer-name">सिंह बिल्डर्स • ⭐ 4.2</div>
+            <div class="job-salary">₹600/दिन</div>
+          </div>
+        </div>
+        <div class="job-tags">
+          <span class="tag">📍 4.1 km</span>
+          <span class="tag green">✅ वेरिफाइड</span>
+          <span class="tag">6 महीने काम</span>
+        </div>
+        <div class="job-footer">
+          <div class="job-footer-left">🆕 नई पोस्टिंग</div>
+          <button class="btn-sm outline" onclick="event.stopPropagation();showAcceptSheet()">रुचि दिखाएं</button>
+        </div>
+      </div>
+
+      <div class="job-match-card">
+        <div class="job-match-top">
+          <div class="employer-avatar" style="background:linear-gradient(135deg,#00A550,#00C060)">🚚</div>
+          <div class="job-info">
+            <div class="job-title">डिलीवरी बॉय</div>
+            <div class="employer-name">फास्ट डिलीवरी को. • ⭐ 4.0</div>
+            <div class="job-salary">₹15,000/महीना + incentive</div>
+          </div>
+        </div>
+        <div class="job-tags">
+          <span class="tag">📍 1.8 km</span>
+          <span class="tag blue">बाइक चाहिए</span>
+          <span class="tag green">✅ वेरिफाइड</span>
+        </div>
+        <div class="job-footer">
+          <div class="job-footer-left">💡 आपकी सैलरी से मैच</div>
+          <button class="btn-sm" onclick="event.stopPropagation()">रुचि दिखाएं ❤️</button>
+        </div>
+      </div>
+
+      <div class="scroll-hint">• नीचे स्क्रॉल करें और देखें •</div>
+    </div>
+
+    <!-- HOME - EMPLOYER -->
+    <div class="screen" id="screen-home-employer">
+      <div class="employer-hero">
+        <h2>नमस्ते, शर्मा जी! 🏪</h2>
+        <p>पटना, बिहार • Sharma General Store</p>
+        <div class="emp-stat-row">
+          <div class="emp-stat">
+            <div class="n">24</div>
+            <div class="l">नए कामगार</div>
+          </div>
+          <div class="emp-stat">
+            <div class="n">5</div>
+            <div class="l">मैच हुए</div>
+          </div>
+          <div class="emp-stat">
+            <div class="n">2</div>
+            <div class="l">Active Jobs</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:16px 20px 0;display:flex;gap:12px">
+        <button class="btn-primary" style="flex:1;padding:14px" onclick="showScreen('post-job')">+ नई जॉब पोस्ट करें</button>
+        <button class="btn-secondary" style="flex:1;padding:14px;margin:0" onclick="showScreen('browse')">कामगार ढूंढें</button>
+      </div>
+
+      <div class="top-workers-label">
+        <span>⭐ टॉप कामगार आपके लिए</span>
+        <span class="view-all" onclick="showScreen('browse')">सभी देखें</span>
+      </div>
+
+      <div class="worker-card">
+        <div class="worker-card-top">
+          <div class="worker-avatar" style="background:linear-gradient(135deg,#FF6B00,#FF9933)">
+            <span>R</span>
+            <div class="verified-badge">✓</div>
+          </div>
+          <div class="worker-main">
+            <div class="worker-name">Ramesh Kumar</div>
+            <div class="worker-skill">🛍 सेल्सबॉय / Shop Helper</div>
+            <div class="stars">⭐⭐⭐⭐⭐ <span style="font-size:11px;color:var(--text-light)">(4.8 • 12 जॉब)</span></div>
+            <div class="worker-salary">₹12,000–₹14,000/महीना</div>
+          </div>
+          <div style="font-size:11px;color:var(--green);font-weight:700;white-space:nowrap">🟢 उपलब्ध</div>
+        </div>
+        <div style="padding:0 16px 10px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tag">📍 1.2 km</span>
+          <span class="tag green">✅ वेरिफाइड</span>
+          <span class="tag blue">3 साल अनुभव</span>
+        </div>
+        <div class="worker-actions">
+          <button class="btn-like" onclick="showMatchPopup()">❤️ Interest दिखाएं</button>
+          <button class="btn-skip">⟩</button>
+        </div>
+      </div>
+
+      <div class="worker-card">
+        <div class="worker-card-top">
+          <div class="worker-avatar" style="background:linear-gradient(135deg,#1A73E8,#4AA3F5)">
+            <span>S</span>
+            <div class="verified-badge">✓</div>
+          </div>
+          <div class="worker-main">
+            <div class="worker-name">Suresh Yadav</div>
+            <div class="worker-skill">🏗 कंस्ट्रक्शन वर्कर</div>
+            <div class="stars">⭐⭐⭐⭐⭐ <span style="font-size:11px;color:var(--text-light)">(4.6 • 8 जॉब)</span></div>
+            <div class="worker-salary">₹500–₹700/दिन</div>
+          </div>
+          <div style="font-size:11px;color:var(--green);font-weight:700;white-space:nowrap">🟢 उपलब्ध</div>
+        </div>
+        <div style="padding:0 16px 10px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tag">📍 3.4 km</span>
+          <span class="tag green">✅ वेरिफाइड</span>
+          <span class="tag blue">5 साल अनुभव</span>
+        </div>
+        <div class="worker-actions">
+          <button class="btn-like">❤️ Interest दिखाएं</button>
+          <button class="btn-skip">⟩</button>
+        </div>
+      </div>
+
+      <div class="boost-card" onclick="showBoostSheet()">
+        <div class="boost-icon">🚀</div>
+        <div class="boost-info">
+          <h3>Job Boost करें</h3>
+          <p>10x ज्यादा कामगार देखें आपकी जॉब</p>
+        </div>
+        <div class="boost-price">₹99</div>
+      </div>
+
+      <div class="scroll-hint">• और कामगार देखने के लिए स्क्रॉल करें •</div>
+    </div>
+
+    <!-- BROWSE WORKERS (Employer) -->
+    <div class="screen" id="screen-browse">
+      <div class="section-pad">
+        <div class="section-title">कामगार ढूंढें</div>
+        <div class="section-sub">24 कामगार उपलब्ध हैं आपके पास</div>
+      </div>
+      <div class="filter-bar">
+        <div class="filter-chip active">सभी 🔽</div>
+        <div class="filter-chip" onclick="toggleFilter(this)">📍 5 km</div>
+        <div class="filter-chip" onclick="toggleFilter(this)">⭐ 4+ रेटिंग</div>
+        <div class="filter-chip" onclick="toggleFilter(this)">✅ वेरिफाइड</div>
+        <div class="filter-chip" onclick="toggleFilter(this)">🟢 उपलब्ध</div>
+        <div class="filter-chip" onclick="toggleFilter(this)">💰 सैलरी</div>
+      </div>
+
+      <div class="category-grid" style="padding:0 20px">
+        <div class="cat-btn selected"><div class="cat-icon">🛍</div><div class="cat-name">सेल्सबॉय</div></div>
+        <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🏗</div><div class="cat-name">कंस्ट्रक्शन</div></div>
+        <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🚚</div><div class="cat-name">डिलीवरी</div></div>
+        <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🏭</div><div class="cat-name">फैक्ट्री</div></div>
+        <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🧑‍💼</div><div class="cat-name">ऑफिस हेल्पर</div></div>
+        <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">👐</div><div class="cat-name">लेबर</div></div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="worker-card">
+          <div class="worker-card-top">
+            <div class="worker-avatar" style="background:linear-gradient(135deg,#FF6B00,#FF9933)">R<div class="verified-badge">✓</div></div>
+            <div class="worker-main">
+              <div class="worker-name">Ramesh Kumar</div>
+              <div class="worker-skill">🛍 सेल्सबॉय</div>
+              <div class="stars">⭐⭐⭐⭐⭐ 4.8</div>
+              <div class="worker-salary">₹12,000–14,000/मा.</div>
+            </div>
+            <div style="font-size:11px;color:var(--green);font-weight:700">🟢 Active</div>
+          </div>
+          <div style="padding:0 16px 10px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag">📍 1.2 km</span><span class="tag green">✅</span><span class="tag blue">3 yr exp</span>
+          </div>
+          <div class="worker-actions">
+            <button class="btn-like" onclick="showMatchPopup()">❤️ Interest दिखाएं</button>
+            <button class="btn-skip">⟩</button>
+          </div>
+        </div>
+
+        <div class="worker-card">
+          <div class="worker-card-top">
+            <div class="worker-avatar" style="background:linear-gradient(135deg,#9B59B6,#C39BD3)">M<div class="verified-badge">✓</div></div>
+            <div class="worker-main">
+              <div class="worker-name">Mukesh Prasad</div>
+              <div class="worker-skill">🛍 Shop Helper</div>
+              <div class="stars">⭐⭐⭐⭐ 4.3</div>
+              <div class="worker-salary">₹9,000–11,000/मा.</div>
+            </div>
+            <div style="font-size:11px;color:var(--green);font-weight:700">🟢 Active</div>
+          </div>
+          <div style="padding:0 16px 10px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag">📍 2.8 km</span><span class="tag green">✅</span><span class="tag blue">1 yr exp</span>
+          </div>
+          <div class="worker-actions">
+            <button class="btn-like" onclick="showMatchPopup()">❤️ Interest दिखाएं</button>
+            <button class="btn-skip">⟩</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POST JOB (Employer) -->
+    <div class="screen" id="screen-post-job">
+      <div class="section-pad">
+        <div class="section-title">नई जॉब पोस्ट करें</div>
+        <div class="section-sub">जल्दी और आसानी से भर्ती करें</div>
+      </div>
+      <div class="form-section">
+        <div class="form-group">
+          <label class="form-label">📋 काम का प्रकार चुनें</label>
+          <div class="category-grid">
+            <div class="cat-btn selected"><div class="cat-icon">🛍</div><div class="cat-name">सेल्सबॉय</div></div>
+            <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🏗</div><div class="cat-name">कंस्ट्रक्शन</div></div>
+            <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🚚</div><div class="cat-name">डिलीवरी</div></div>
+            <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🏭</div><div class="cat-name">फैक्ट्री</div></div>
+            <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">🧑‍💼</div><div class="cat-name">ऑफिस</div></div>
+            <div class="cat-btn" onclick="selectCat(this)"><div class="cat-icon">👐</div><div class="cat-name">लेबर</div></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">💰 सैलरी (₹)</label>
+          <div style="display:flex;gap:10px">
+            <input class="form-input" placeholder="कम से कम" type="number" style="flex:1">
+            <input class="form-input" placeholder="ज्यादा से ज्यादा" type="number" style="flex:1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📅 सैलरी का प्रकार</label>
+          <div class="chip-group">
+            <div class="chip active" onclick="selectChip(this)">महीना</div>
+            <div class="chip" onclick="selectChip(this)">दिन</div>
+            <div class="chip" onclick="selectChip(this)">घंटा</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📍 काम की जगह</label>
+          <input class="form-input" placeholder="जैसे: पटना जंक्शन के पास, बिहार" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📝 काम का विवरण (optional)</label>
+          <textarea class="form-input" rows="3" placeholder="जैसे: सुबह 9 से शाम 6 बजे, दुकान पर ग्राहकों की मदद करना..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">⏰ कब से शुरू</label>
+          <div class="chip-group">
+            <div class="chip active" onclick="selectChip(this)">तुरंत</div>
+            <div class="chip" onclick="selectChip(this)">इस हफ्ते</div>
+            <div class="chip" onclick="selectChip(this)">इस महीने</div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="showJobPostedConfirm()" style="margin-top:8px">✅ जॉब पोस्ट करें</button>
+      </div>
+    </div>
+
+    <!-- MATCHES SCREEN -->
+    <div class="screen" id="screen-matches">
+      <div class="section-pad">
+        <div class="section-title" id="matches-title">आपके मैच</div>
+        <div class="section-sub" id="matches-sub">3 नए मैच हैं आज</div>
+      </div>
+
+      <div class="unlock-banner" id="unlock-banner">
+        <div class="lock-icon">🔓</div>
+        <div>
+          <h3>2 और free unlock बाकी है</h3>
+          <p>Contact number देखने के लिए unlock करें • ₹15/unlock</p>
+        </div>
+      </div>
+
+      <div class="match-item" onclick="showContactSheet()">
+        <div class="match-avatar" style="background:linear-gradient(135deg,#FF6B00,#FF9933)">R</div>
+        <div class="match-info">
+          <div class="match-name">Ram Electronics</div>
+          <div class="match-meta">🛍 सेल्सबॉय • ₹12,000/मा. • 2.3 km</div>
+        </div>
+        <div style="text-align:right">
+          <div class="match-status matched">🎉 मैच!</div>
+          <div class="match-time" style="margin-top:4px">2 घंटे पहले</div>
+        </div>
+      </div>
+
+      <div class="match-item" onclick="showContactSheet()">
+        <div class="match-avatar" style="background:linear-gradient(135deg,#1A73E8,#4AA3F5)">S</div>
+        <div class="match-info">
+          <div class="match-name">Singh Builders</div>
+          <div class="match-meta">🏗 कंस्ट्रक्शन • ₹600/दिन • 4.1 km</div>
+        </div>
+        <div style="text-align:right">
+          <div class="match-status matched">🎉 मैच!</div>
+          <div class="match-time" style="margin-top:4px">कल</div>
+        </div>
+      </div>
+
+      <div class="match-item">
+        <div class="match-avatar" style="background:linear-gradient(135deg,#9B59B6,#C39BD3)">F</div>
+        <div class="match-info">
+          <div class="match-name">Fast Delivery Co.</div>
+          <div class="match-meta">🚚 डिलीवरी • ₹15,000/मा. • 1.8 km</div>
+        </div>
+        <div style="text-align:right">
+          <div class="match-status pending">⏳ वेटिंग</div>
+          <div class="match-time" style="margin-top:4px">अभी</div>
+        </div>
+      </div>
+
+      <div style="padding:20px 20px 8px;font-size:16px;font-weight:700;color:var(--text-mid)">📥 Interested Employers</div>
+
+      <div class="match-item">
+        <div class="match-avatar" style="background:linear-gradient(135deg,#00A550,#00C060)">G</div>
+        <div class="match-info">
+          <div class="match-name">Gupta Store</div>
+          <div class="match-meta">🛍 Shop Helper • ₹10,000/मा. • 3.2 km</div>
+        </div>
+        <div style="text-align:right">
+          <div class="match-status new">🆕 New</div>
+          <div class="match-time" style="margin-top:4px">5 min पहले</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="screen" id="screen-notifications">
+      <div class="section-pad" style="padding-bottom:12px">
+        <div class="section-title">सूचनाएं</div>
+        <div class="section-sub">आज की अपडेट</div>
+      </div>
+
+      <div class="notif-item unread">
+        <div class="notif-dot" style="background:#FFF3E8">❤️</div>
+        <div class="notif-content">
+          <div class="notif-text"><b>Ram Electronics</b> ने आपका प्रोफाइल देखा और Interest दिखाया!</div>
+          <div class="notif-time">2 घंटे पहले • SMS भी भेजा गया</div>
+        </div>
+      </div>
+
+      <div class="notif-item unread">
+        <div class="notif-dot" style="background:#E6F7EE">🎉</div>
+        <div class="notif-content">
+          <div class="notif-text"><b>Match हो गया!</b> Singh Builders से मैच हुआ। Contact unlock करें।</div>
+          <div class="notif-time">5 घंटे पहले</div>
+        </div>
+      </div>
+
+      <div class="notif-item unread">
+        <div class="notif-dot" style="background:#EAF1FD">🆕</div>
+        <div class="notif-content">
+          <div class="notif-text"><b>3 नई नौकरियां</b> आपके area में आईं – तुरंत देखें!</div>
+          <div class="notif-time">आज सुबह 9 बजे</div>
+        </div>
+      </div>
+
+      <div class="notif-item">
+        <div class="notif-dot" style="background:#F5F5FA">👁</div>
+        <div class="notif-content">
+          <div class="notif-text"><b>Fast Delivery Co.</b> ने आपका प्रोफाइल देखा</div>
+          <div class="notif-time">कल शाम 4 बजे</div>
+        </div>
+      </div>
+
+      <div class="notif-item">
+        <div class="notif-dot" style="background:#F5F5FA">💰</div>
+        <div class="notif-content">
+          <div class="notif-text">Payment सफल – ₹15 में 1 contact unlock हुआ</div>
+          <div class="notif-time">परसों</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE SCREEN -->
+    <div class="screen" id="screen-profile">
+      <div class="profile-hero">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">👷</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profile-name">Rajesh Sharma</div>
+            <div class="profile-skill" id="profile-skill">🛍 Salesboy / Shop Helper</div>
+            <div class="profile-rating">
+              <span>⭐⭐⭐⭐⭐</span>
+              <span class="rating-num">4.7</span>
+              <span style="color:rgba(255,255,255,0.5);font-size:12px">(23 reviews)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="pstat-num">23</div>
+          <div class="pstat-lbl">जॉब पूरे</div>
+        </div>
+        <div class="profile-stat">
+          <div class="pstat-num">4.7</div>
+          <div class="pstat-lbl">रेटिंग</div>
+        </div>
+        <div class="profile-stat">
+          <div class="pstat-num">87%</div>
+          <div class="pstat-lbl">Response</div>
+        </div>
+        <div class="profile-stat">
+          <div class="pstat-num">✅</div>
+          <div class="pstat-lbl">वेरिफाइड</div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3>📋 मेरी जानकारी</h3>
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon" style="background:#FFF3E8">💰</div>
+            <div><div class="info-label">Expected Salary</div><div class="info-value">₹12,000–₹15,000/माह</div></div>
+          </div>
+          <div class="info-row-right">✏️</div>
+        </div>
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon" style="background:#EAF1FD">📍</div>
+            <div><div class="info-label">Location</div><div class="info-value">लखनऊ, UP</div></div>
+          </div>
+          <div class="info-row-right">✏️</div>
+        </div>
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon" style="background:#E6F7EE">📱</div>
+            <div><div class="info-label">Phone</div><div class="info-value">+91 98765 XXXXX</div></div>
+          </div>
+          <div class="info-row-right">✏️</div>
+        </div>
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon" style="background:#F5F5FA">🗣</div>
+            <div><div class="info-label">भाषा</div><div class="info-value">हिंदी, अवधी</div></div>
+          </div>
+          <div class="info-row-right">✏️</div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3>🏆 काम का अनुभव</h3>
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon" style="background:#FFF3E8">🛍</div>
+            <div><div class="info-label">Sharma Electronics</div><div class="info-value">2 साल • सेल्सबॉय</div></div>
+          </div>
+          <div class="info-row-right">⭐4.8</div>
+        </div>
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon" style="background:#EAF1FD">🏪</div>
+            <div><div class="info-label">Gupta General Store</div><div class="info-value">1 साल • Shop Helper</div></div>
+          </div>
+          <div class="info-row-right">⭐4.5</div>
+        </div>
+      </div>
+
+      <div style="padding:16px 20px 0">
+        <button class="btn-secondary" onclick="switchRole()" style="width:100%">🔄 Role बदलें (Worker / Employer)</button>
+      </div>
+      <div style="padding:10px 20px 0">
+        <button class="btn-secondary" style="width:100%;color:#E53935;border-color:#E53935" onclick="logout()">🚪 Logout</button>
+      </div>
+      <div style="height:20px"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item active" onclick="showScreen('home')" id="nav-home">
+      <span class="nav-icon">🏠</span>
+      <span>होम</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('browse')" id="nav-browse">
+      <span class="nav-icon">🔍</span>
+      <span id="nav-browse-label">ढूंढें</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('matches')" id="nav-matches">
+      <span class="nav-icon">🤝</span>
+      <span>मैच</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('notifications')" id="nav-notifs">
+      <span class="nav-icon">🔔</span>
+      <span>सूचनाएं</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('profile')" id="nav-profile">
+      <span class="nav-icon">👤</span>
+      <span>प्रोफाइल</span>
+    </button>
+  </nav>
+</div>
+
+<!-- MATCH POPUP -->
+<div class="match-popup" id="match-popup">
+  <div class="match-popup-inner">
+    <div class="match-emojis">🎉🤝🎉</div>
+    <h2>Match हो गया!</h2>
+    <p>Ramesh Kumar ने आपकी जॉब में Interest दिखाया। अब contact unlock करें।</p>
+    <div style="height:20px"></div>
+    <button class="btn-primary" onclick="closeMatchPopup();showContactSheet()">📞 Contact देखें (Free)</button>
+    <button class="btn-secondary" onclick="closeMatchPopup()">बाद में</button>
+  </div>
+</div>
+
+<!-- ACCEPT JOB SHEET (Worker) -->
+<div class="bottom-sheet-overlay" id="accept-sheet">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">क्या आप interested हैं?</div>
+    <div style="background:var(--saffron-pale);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700">Ram Electronics – सेल्सबॉय</div>
+      <div style="font-size:14px;color:var(--text-mid);margin-top:4px">₹12,000/मा. • 2.3 km • ⭐4.5</div>
+    </div>
+    <p style="font-size:14px;color:var(--text-mid);margin-bottom:16px">हां करने पर employer को नोटिफिकेशन जाएगी। Match होने पर contact मिलेगा।</p>
+    <button class="btn-primary" onclick="closeSheet('accept-sheet');showMatchConfirm()">✅ हां, मुझे Interest है!</button>
+    <button class="btn-secondary" onclick="closeSheet('accept-sheet')">नहीं, बाद में</button>
+  </div>
+</div>
+
+<!-- CONTACT UNLOCK SHEET -->
+<div class="bottom-sheet-overlay" id="contact-sheet">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Contact Unlock करें</div>
+    <div class="contact-card" style="margin:0 0 16px">
+      <div style="font-size:36px">📞</div>
+      <div class="cc-info">
+        <h4>Contact Number देखें</h4>
+        <p>Ram Electronics – आपसे बात करना चाहते हैं</p>
+      </div>
+    </div>
+    <div style="background:var(--green-pale);border-radius:12px;padding:12px;margin-bottom:16px;text-align:center">
+      <div style="color:var(--green);font-weight:700;font-size:15px">🎁 आपके पास 2 FREE unlock बाकी हैं!</div>
+    </div>
+    <button class="btn-primary" style="background:linear-gradient(135deg,var(--green),var(--green-light))" onclick="closeSheet('contact-sheet');showContactReveal()">🆓 Free में Unlock करें</button>
+    <button class="btn-secondary" onclick="closeSheet('contact-sheet')">बाद में</button>
+  </div>
+</div>
+
+<!-- BOOST SHEET (Employer) -->
+<div class="bottom-sheet-overlay" id="boost-sheet">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🚀 Job Boost</div>
+    <p style="color:var(--text-mid);font-size:14px;margin-bottom:16px">ज्यादा लोगों तक पहुंचें, जल्दी hire करें</p>
+    <div class="pay-option selected" onclick="selectPay(this)">
+      <div><h4>Basic Boost</h4><p>3 दिन • 5x ज्यादा लोग</p></div>
+      <div class="pay-price">₹49</div>
+    </div>
+    <div class="pay-option" onclick="selectPay(this)">
+      <div><h4>Super Boost ⭐</h4><p>7 दिन • 10x ज्यादा • Priority listing</p></div>
+      <div class="pay-price">₹99</div>
+    </div>
+    <div class="pay-option" onclick="selectPay(this)">
+      <div><h4>Max Boost 🔥</h4><p>15 दिन • 20x • Highlighted + SMS</p></div>
+      <div class="pay-price">₹199</div>
+    </div>
+    <button class="btn-primary" onclick="closeSheet('boost-sheet')" style="margin-top:8px">💳 Pay करें – UPI / Cash</button>
+    <button class="btn-secondary" onclick="closeSheet('boost-sheet')">बाद में</button>
+  </div>
+</div>
+
+<!-- CONTACT REVEAL POPUP -->
+<div class="match-popup" id="contact-reveal">
+  <div class="match-popup-inner">
+    <div style="font-size:48px;margin-bottom:12px">📱</div>
+    <h2>Contact Unlocked!</h2>
+    <div style="background:var(--green-pale);border:2px solid var(--green);border-radius:14px;padding:16px;margin:16px 0">
+      <div style="color:var(--text-mid);font-size:12px">Ram Electronics</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:4px">+91 98123 45678</div>
+      <div style="color:var(--text-mid);font-size:12px;margin-top:4px">📍 Gandhi Nagar, Lucknow</div>
+    </div>
+    <button class="btn-primary" style="background:linear-gradient(135deg,#25D366,#128C7E)" onclick="closeContact()">📱 WhatsApp पर बात करें</button>
+    <button class="btn-secondary" onclick="closeContact()">📞 Call करें</button>
+  </div>
+</div>
+
+<script>
+let currentRole = 'worker';
+let availableToggled = true;
+
+// SPLASH
+setTimeout(() => {
+  const splash = document.getElementById('splash');
+  splash.style.opacity = '0';
+  setTimeout(() => {
+    splash.style.display = 'none';
+    document.getElementById('onboarding').style.display = 'flex';
+  }, 500);
+}, 2500);
+
+function nextSlide(n) {
+  document.querySelectorAll('.onboard-slide').forEach(s => s.classList.remove('active'));
+  document.getElementById('slide-' + n).classList.add('active');
+}
+
+function showRoleSelect() {
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('role-select').style.display = 'flex';
+}
+
+function selectRole(role) {
+  currentRole = role;
+  document.getElementById('role-select').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+  setupRole();
+  showScreen('home');
+}
+
+function setupRole() {
+  const browse = document.getElementById('nav-browse-label');
+  if (currentRole === 'employer') {
+    browse.textContent = 'ढूंढें';
+  } else {
+    browse.textContent = 'जॉब्स';
+  }
+  // Update matches title
+  if (currentRole === 'employer') {
+    document.getElementById('matches-title').textContent = 'आपके Matches';
+    document.getElementById('matches-sub').textContent = '5 नए Workers ने Accept किया';
+    document.getElementById('unlock-banner').style.display = 'none';
+  }
+}
+
+function showScreen(name) {
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  let screenId;
+  if (name === 'home') {
+    screenId = currentRole === 'employer' ? 'screen-home-employer' : 'screen-home-worker';
+    document.getElementById('nav-home').classList.add('active');
+  } else if (name === 'browse') {
+    screenId = currentRole === 'employer' ? 'screen-browse' : 'screen-home-worker';
+    document.getElementById('nav-browse').classList.add('active');
+  } else if (name === 'post-job') {
+    screenId = 'screen-post-job';
+    document.getElementById('nav-browse').classList.add('active');
+  } else if (name === 'matches') {
+    screenId = 'screen-matches';
+    document.getElementById('nav-matches').classList.add('active');
+  } else if (name === 'notifications') {
+    screenId = 'screen-notifications';
+    document.getElementById('nav-notifs').classList.add('active');
+    document.getElementById('notif-count').style.display = 'none';
+  } else if (name === 'profile') {
+    screenId = 'screen-profile';
+    document.getElementById('nav-profile').classList.add('active');
+    // Update profile for employer
+    if (currentRole === 'employer') {
+      document.getElementById('profile-name').textContent = 'Sharma Ji';
+      document.getElementById('profile-skill').textContent = '🏪 Employer – General Store';
+    }
+  }
+
+  if (screenId) {
+    document.getElementById(screenId).classList.add('active');
+  }
+}
+
+function toggleAvailability() {
+  availableToggled = !availableToggled;
+  const toggle = document.getElementById('avail-toggle');
+  const label = document.getElementById('avail-label');
+  if (availableToggled) {
+    toggle.classList.add('on');
+    label.textContent = '✅ उपलब्ध हूं – नौकरी मिल सकती है';
+  } else {
+    toggle.classList.remove('on');
+    label.textContent = '❌ अभी उपलब्ध नहीं हूं';
+  }
+}
+
+function toggleFilter(el) { el.classList.toggle('active'); }
+function selectCat(el) {
+  el.closest('.category-grid').querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectChip(el) {
+  el.closest('.chip-group').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function showJobDetail() {}
+
+function showAcceptSheet() {
+  document.getElementById('accept-sheet').classList.add('show');
+}
+function closeSheet(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function showMatchConfirm() {
+  // Show a brief confirmation toast-like
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#0D1B3E;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:600;animation:fadeIn 0.3s ease';
+  toast.textContent = '✅ Interest दिखा दिया! Employer को नोटिफाई किया गया।';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function showMatchPopup() {
+  document.getElementById('match-popup').classList.add('show');
+}
+function closeMatchPopup() {
+  document.getElementById('match-popup').classList.remove('show');
+}
+
+function showContactSheet() {
+  document.getElementById('contact-sheet').classList.add('show');
+}
+
+function showContactReveal() {
+  document.getElementById('contact-sheet').classList.remove('show');
+  document.getElementById('contact-reveal').classList.add('show');
+}
+function closeContact() {
+  document.getElementById('contact-reveal').classList.remove('show');
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--green);color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:600;white-space:nowrap';
+  toast.textContent = '📞 Number copy हो गया!';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+function showBoostSheet() {
+  document.getElementById('boost-sheet').classList.add('show');
+}
+function selectPay(el) {
+  el.closest('.bottom-sheet').querySelectorAll('.pay-option').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function showJobPostedConfirm() {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--green);color:white;padding:14px 24px;border-radius:14px;font-size:15px;font-weight:700;z-index:600;white-space:nowrap;box-shadow:0 4px 20px rgba(0,165,80,0.4)';
+  toast.textContent = '🎉 जॉब पोस्ट हो गई! Matching शुरू...';
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.remove(); showScreen('home'); }, 2500);
+}
+
+function switchRole() {
+  currentRole = currentRole === 'worker' ? 'employer' : 'worker';
+  setupRole();
+  showScreen('home');
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--navy);color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:600';
+  toast.textContent = currentRole === 'employer' ? '🏪 Employer mode में गए' : '👷 Worker mode में गए';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+function logout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('onboarding').style.display = 'flex';
+  nextSlide(1);
+}
+
+// Close sheets by tapping overlay
+document.querySelectorAll('.bottom-sheet-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+document.querySelectorAll('.match-popup').forEach(popup => {
+  popup.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+</script>
+</body>
+</html>
+`;
+
 const PORT   = process.env.PORT || 5000;
 const SECRET = process.env.JWT_SECRET || 'rozgar_secret_key_2024';
 
 app.use(cors({ origin: '*' }));
+
 app.use(express.json());
 app.use(morgan('tiny'));
-app.use(express.static(path.join(__dirname, 'frontend/public')));
+
 
 // ================================================================
 // IN-MEMORY DATABASE (no signup, no Atlas, works instantly)
@@ -405,7 +1871,7 @@ function bidAskEngine(job) {
 }
 
 // ── CATCH ALL → serve frontend ───────────────────────────────────
-app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'frontend/public/index.html')));
+app.get('*', (_, res) => res.send(HTML));
 
 // ── START ────────────────────────────────────────────────────────
 app.listen(PORT, () => console.log(`\n✅ RozgarConnect running at http://localhost:${PORT}\n`));
